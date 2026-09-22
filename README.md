@@ -2,7 +2,11 @@
 
 This repository contains the additional analysis completed for Individual Task 2 in the Case Studies in Data Science course.
 
-The work extends my Individual Task 1 project, which focused on forecasting Victorian electricity demand using historical demand and weather data.
+The work extends my Individual Task 1 project, where I developed models to forecast Victorian electricity demand using historical electricity-demand information, calendar variables and weather data.
+
+For Task 2, I have extended the original analysis to examine the robustness of the modelling approach, performance under different training-set sizes, and differences in model performance across different operating conditions.
+
+---
 
 ## Project Overview
 
@@ -15,29 +19,107 @@ For Task 2, I extended the analysis to examine:
 
 - chronological / temporal validation
 - model performance across different training-set sizes
-- operational subgroup differences using Microsoft Fairlearn
+- operational performance differences using Microsoft Fairlearn
 - security, privacy and ethical considerations related to wider deployment
+
+The same processed model-ready dataset and model settings from Task 1 are reused so that the additional analysis remains consistent with the original project.
+
+---
+
+## Dataset
+
+The analysis uses the processed model-ready dataset created during Individual Task 1:
+
+`outputs/stage_03_model_ready_data.csv`
+
+The dataset contains Victorian electricity-demand observations from 2014 together with the features prepared during the Task 1 preprocessing stage.
+
+The prediction target is:
+
+`TOTALDEMAND`
+
+The processed dataset contains lag-based electricity-demand features, calendar features and weather variables.
+
+### Demand-Based Features
+
+The historical electricity-demand predictors include:
+
+- `vk_lag_48`
+- `vk_lag_96`
+- `vk_lag_336`
+- `vk_previous_day_average`
+- `vk_previous_7day_average`
+
+These features provide information about previous electricity-demand behaviour.
+
+### Calendar Features
+
+The calendar-related predictors include:
+
+- `vk_is_weekend`
+- `vk_hour_sin`
+- `vk_hour_cos`
+- `vk_day_sin`
+- `vk_day_cos`
+- `vk_month_sin`
+- `vk_month_cos`
+
+The sine and cosine variables are used to represent recurring time patterns such as hour-of-day, day and month.
+
+### Weather Features
+
+The weather predictors used in the models are:
+
+- `vk_min_temp`
+- `vk_max_temp`
+- `vk_rainfall`
+- `vk_humidity_9am`
+- `vk_humidity_3pm`
+- `vk_temp_9am`
+- `vk_temp_3pm`
+
+The electricity-demand information was originally obtained from the Australian Energy Market Operator (AEMO).
+
+The weather information used in the original Task 1 preprocessing was based on Australian weather observations. The processed weather variables are already included in the model-ready dataset used in this repository.
+
+The raw data preparation was completed during Task 1. Task 2 therefore reads the processed model-ready dataset directly instead of repeating the original preprocessing workflow.
+
+---
 
 ## Task 2 Analysis
 
 ### 1. Temporal Validation
 
-Because electricity demand is time-series data, the analysis preserves chronological order instead of using random K-fold cross-validation.
+Electricity demand is time-series data, so the observations should not be randomly mixed between training and validation sets.
 
-An expanding-window temporal validation approach was used across:
+For this reason, I used an expanding-window chronological validation approach.
 
-- July
-- August
-- September
-- October
+The validation periods were:
 
-The November–December period remained separate as the final unseen test period.
+- July 2014
+- August 2014
+- September 2014
+- October 2014
 
-The purpose of this analysis was to evaluate whether the Decision Tree and Neural Network produced consistent performance across different time periods.
+For each validation period, only observations occurring before that month were used for training.
+
+The November–December period was kept separate as the final unseen test period.
+
+This analysis was used to check whether the models produced consistent results across different time periods.
+
+The generated files are:
+
+- `task2_outputs/task2_01_temporal_cv_results.csv`
+- `task2_outputs/task2_02_temporal_cv_summary.csv`
+- `task2_outputs/task2_03_temporal_cv_mae.png`
+
+---
 
 ### 2. Training-Set Size Analysis
 
-The effect of training-set size was investigated by keeping October as the validation period and varying the amount of earlier chronological training data.
+I also examined how model performance changed when different amounts of historical training data were available.
+
+October was kept as the fixed validation period, while the amount of earlier chronological training data was varied.
 
 The following training proportions were tested:
 
@@ -47,147 +129,56 @@ The following training proportions were tested:
 - 80%
 - 100%
 
-This analysis was used to examine how model generalisation changed as more historical observations became available.
+Because the subsets were selected chronologically, increasing the training-set size also changed the historical and seasonal coverage available to the models.
 
-Because the subsets were chronological, changes in training size also changed the temporal and seasonal coverage of the training data.
+For this reason, the experiment is interpreted as a training-size sensitivity analysis rather than assuming that changes in performance were caused only by the number of observations.
+
+The generated files are:
+
+- `task2_outputs/task2_04_learning_curve_results.csv`
+- `task2_outputs/task2_05_learning_curve.png`
+
+---
 
 ### 3. Fairlearn Analysis
 
-Microsoft Fairlearn `MetricFrame` was used to compare prediction errors across different operating conditions.
+Microsoft Fairlearn `MetricFrame` was used to compare model prediction errors across different operating conditions.
 
-The dataset does not contain protected demographic attributes such as race, gender or age. Therefore, this analysis focuses on operational performance disparities rather than demographic fairness.
+The dataset does not contain demographic protected attributes such as race, gender or age. Therefore, this part of the analysis is not intended to measure demographic fairness.
+
+Instead, Fairlearn is used to examine operational differences in model performance.
 
 The groups examined were:
 
-- weekday vs weekend
-- temperature ranges
+- weekday vs weekend observations
+- different maximum-temperature ranges
 
-This analysis helped identify whether model performance was consistent across different parts of the final test data.
+The temperature groups used were:
 
-### 4. Security, Privacy and Ethical Considerations
+- less than or equal to 15°C
+- 15–25°C
+- 25–30°C
+- above 30°C
 
-The Task 2 reflection also considers possible risks if the forecasting approach were deployed more widely.
+Mean Absolute Error (MAE) and Root Mean Squared Error (RMSE) were calculated for the different groups.
 
-These include:
+The analysis also calculates the difference between the highest and lowest group MAE to identify whether model performance varies considerably across operating conditions.
 
-- integrity of electricity-demand and weather inputs
-- risks from corrupted or manipulated data
-- privacy concerns if household-level smart-meter data were used
-- limitations caused by underrepresented operating conditions
-- transfer of a model trained on historical data to different years or locations
-- the importance of human oversight in operational decision-making
+The generated files are:
 
-## Dataset Used
+- `task2_outputs/task2_06_weekend_fairness.csv`
+- `task2_outputs/task2_07_temperature_fairness.csv`
+- `task2_outputs/task2_08_fairness_error_gaps.csv`
 
-Task 2 uses the same model-ready dataset prepared in Individual Task 1:
+---
 
-`outputs/stage_03_model_ready_data.csv`
+## Models
 
-This file contains the processed features required by the forecasting models, including historical demand information, lag-based predictors, calendar variables and weather features.
+### Decision Tree
 
-The Task 2 script reads this file directly so that the additional temporal-validation, training-size and Fairlearn analyses remain consistent with the original Task 1 modelling pipeline.
-
-## Repository Structure
+The Decision Tree model uses:
 
 ```text
-task2-analysis/
-│
-├── README.md
-├── vk_task2_analysis.py
-├── requirements.txt
-│
-├── outputs/
-│   └── stage_03_model_ready_data.csv
-│
-├── results/
-│   ├── task2_01_temporal_cv_results.csv
-│   ├── task2_02_temporal_cv_summary.csv
-│   ├── task2_04_learning_curve_results.csv
-│   ├── task2_06_weekend_fairness.csv
-│   ├── task2_07_temperature_fairness.csv
-│   └── task2_08_fairness_error_gaps.csv
-│
-└── figures/
-    ├── task2_03_temporal_cv_mae.png
-    └── task2_05_learning_curve.png
-```
-
-## Output Files
-
-### Temporal Validation
-
-- `task2_01_temporal_cv_results.csv`
-- `task2_02_temporal_cv_summary.csv`
-- `task2_03_temporal_cv_mae.png`
-
-### Training-Set Size Analysis
-
-- `task2_04_learning_curve_results.csv`
-- `task2_05_learning_curve.png`
-
-### Fairlearn Analysis
-
-- `task2_06_weekend_fairness.csv`
-- `task2_07_temperature_fairness.csv`
-- `task2_08_fairness_error_gaps.csv`
-
-## Requirements
-
-The main Python packages used are:
-
-```text
-pandas
-numpy
-scikit-learn
-matplotlib
-fairlearn
-```
-
-Install the required packages using:
-
-```bash
-pip install -r requirements.txt
-```
-
-## Running the Analysis
-
-Run the Task 2 analysis script using:
-
-```bash
-python vk_task2_analysis.py
-```
-
-The script reads:
-
-```text
-outputs/stage_03_model_ready_data.csv
-```
-
-and generates the temporal-validation, training-size and Fairlearn results used in the Task 2 report.
-
-## Data Sources
-
-The project uses Victorian electricity-demand data together with Victorian weather information.
-
-The original electricity-demand data were obtained from AEMO, while the weather information was obtained from the Bureau of Meteorology.
-
-The processed model-ready file included in this repository was prepared during Individual Task 1 and reused in Task 2 to maintain consistency with the original forecasting analysis.
-
-## Important Limitations
-
-The analysis has several limitations that should be considered when interpreting the results:
-
-- model performance changes across different time periods
-- some operating conditions are underrepresented
-- the final test period contains no observations at or below 15°C
-- historical 2014 data may not represent future demand behaviour
-- weather information was averaged across multiple Victorian stations
-- observed weather was used rather than future weather forecasts
-
-For these reasons, the results should not be interpreted as evidence that the models will perform equally well under all future operating conditions.
-
-## Academic Use
-
-This repository was created for academic coursework.
-
-The code and outputs should be interpreted in the context of the associated assessment report and its stated assumptions and limitations.
+max_depth = 15
+min_samples_leaf = 100
+random_state = 42
