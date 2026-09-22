@@ -1,5 +1,0 @@
-Model,Grouping,MAE_gap_MW
-Decision Tree,weekday vs weekend,11.810741537206468
-Decision Tree,temperature groups,66.8953262384141
-Neural Network,weekday vs weekend,71.20529604223142
-Neural Network,temperature groups,52.56004352253021
